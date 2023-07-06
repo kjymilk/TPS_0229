@@ -1,8 +1,7 @@
 using System.Collections.Generic;
-using UnityEngine;
-
 // TextMesh Pro 관련 컴포넌트에 접근하기 위해 선언
 using TMPro;
+using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
@@ -58,26 +57,27 @@ public class GameManager : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        DisplayScore(0);
-
         // 몬스터 오브젝트 풀 생성
         CreateMonsterPool();
         // SpawnPointGroup 게임오브젝트의 Transform 컴포넌트 추출
-        Transform spawnPointGroup =
-        GameObject.Find("SpawnPointGroup")?.transform;
-        // SpawnPointGroup 하위에 있는 모든 차일드 게임오브젝트의Transform 컴포넌트 추출
-    foreach (Transform point in spawnPointGroup)
+        Transform spawnPointGroup = GameObject.Find("SpawnPointGroup")?.transform;
+        // SpawnPointGroup 하위에 있는 모든 차일드 게임오브젝트의 Transform 컴포넌트 추출
+        foreach (Transform point in spawnPointGroup)
         {
             points.Add(point);
         }
         // 일정한 시간 간격으로 함수를 호출
         InvokeRepeating("CreateMonster", 2.0f, createTime);
+        totScore = PlayerPrefs.GetInt("TOT_SCORE", 0);
+        // 스코어 점수 출력
+        DisplayScore(0);
     }
 
     public void DisplayScore(int score)
     {
         totScore += score;
         scoreText.text = $"<color=#00ff00>SCORE :</color> <color=#ff0000>{totScore:#,##0}</color>";
+        PlayerPrefs.SetInt("TOT_SCORE", totScore);
     }
     void CreateMonster()
     {

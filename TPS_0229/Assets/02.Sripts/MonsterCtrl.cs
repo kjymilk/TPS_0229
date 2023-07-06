@@ -49,7 +49,7 @@ public class MonsterCtrl : MonoBehaviour
 
         // 몬스터의 상태를 체크하는 코루틴 함수 호출
         StartCoroutine(CheckMonsterState());
-        
+
         // 상태에 따라 몬스터의 행동을 수행하는 코루틴 함수 호출
         StartCoroutine(MonsterAction());
     }
@@ -75,10 +75,29 @@ public class MonsterCtrl : MonoBehaviour
         agent = GetComponent<NavMeshAgent>();
         // 추적 대상의 위치를 설정하면 바로 추적 시작
         //agent.destination = playerTr.position;
-       
+        // NavMeshAgent의 자동 회전 기능 비활성화
+        agent.updateRotation = false;
     }
-    // 일정한 간격으로 몬스터의 행동 상태를 체크
 
+    // 일정한 간격으로 몬스터의 행동 상태를 체크
+    void Update()
+    {
+        // 목적지까지 남은 거리로 회전 여부 판단
+        if (agent.remainingDistance >= 2.0f)
+        {
+            // 에이전트의 이동 방향
+            Vector3 direction = agent.desiredVelocity;
+            if (direction.sqrMagnitude >= 0.1f * 0.1f)
+            {
+                // 회전 각도(쿼터니언) 산출
+                Quaternion rot = Quaternion.LookRotation(direction);
+                // 구면 선형보간 함수로 부드러운 회전 처리
+                monsterTr.rotation = Quaternion.Slerp(monsterTr.rotation,
+                rot,
+                Time.deltaTime * 10.0f);
+            }
+        }
+    }
     void OnPlayerDie()
     {
         // 몬스터의 상태를 체크하는 코루틴 함수를 모두 정지시킴
@@ -169,7 +188,7 @@ public class MonsterCtrl : MonoBehaviour
             }
         }
     }
-        void OnDrawGizmos()
+    void OnDrawGizmos()
     {
         // 추적 사정거리 표시
         if (state == State.TRACE)
@@ -188,28 +207,29 @@ public class MonsterCtrl : MonoBehaviour
     {
         if (coll.collider.CompareTag("BULLET"))
         {
-
             // 충돌한 총알을 삭제
             Destroy(coll.gameObject);
-            // 피격 리액션 애니메이션 실행
-            anim.SetTrigger(hashHit);
-            // 총알의 충돌 지점
+        }
 
-            Vector3 pos = coll.GetContact(0).point;
-            // 총알의 충돌 지점의 법선 벡터
-            Quaternion rot = Quaternion.LookRotation(-coll.GetContact(0).normal);
-            // 혈흔 효과를 생성하는 함수 호출
-            ShowBloodEffect(pos, rot);
-            //OnCollisionEnter함수 안에 추가
 
-            // 몬스터의 hp 차감
-            hp -= 10;
-            if (hp <= 0)
-            {
-                state = State.DIE;
-                //몬스터가 사망했을 때 50점을 추가
-                GameManager.instance.DisplayScore(50);
-            }
+
+    }
+
+    // 레이캐스트를 사용해 데미지를 입히는 로직
+    public void OnDamage(Vector3 pos, Vector3 normal)
+    {
+        // 피격 리액션 애니메이션 실행
+        anim.SetTrigger(hashHit);
+        Quaternion rot = Quaternion.LookRotation(normal);
+        // 혈흔 효과를 생성하는 함수 호출
+        ShowBloodEffect(pos, rot);
+        // 몬스터의 hp 차감
+        hp -= 30;
+        if (hp <= 0)
+        {
+            state = State.DIE;
+            // 몬스터가 사망했을 때 50점을 추가
+            GameManager.instance.DisplayScore(50);
         }
     }
 
